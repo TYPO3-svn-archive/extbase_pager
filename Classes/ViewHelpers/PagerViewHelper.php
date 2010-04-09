@@ -726,7 +726,7 @@ plugin.tx_sdfdsifj.settings.pager {
 			$value = '<fieldset class="defaultForm">' . "\n" . $value . "\n" . '</fieldset>';
 			
 			// javascript include
-			$value = '<script type="text/javascript" src="typo3conf/ext/cabag_extbase/Resources/Public/JavaScript/pager.js"></script>' . "\n" . $value;
+			$value = '<script type="text/javascript" src="typo3conf/ext/extbase_pager/Resources/Public/JavaScript/pager.js"></script>' . "\n" . $value;
 			
 			// wrap in form tags
 			$value = '<form method="GET" action="' . $uri . '">' . "\n" . $value . "\n" . '</form>';
