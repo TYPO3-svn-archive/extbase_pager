@@ -1,3 +1,19 @@
+2011-02-17 Nils Blattner <nb@cabag.ch>
+	* version 0.1.1
+	* added prepareArray() and prepareNumbers() to Tx_ExtbasePager_Utility_Pager
+	*	This is to allow for non-Query objects to be used for the pager
+	* changed the way the global typoscript is fetched, as the configuration manager (which is closed API) was changed for extbase 1.3.0
+	* fixed some bugs when no typoscript was present
+
+2010-10-02 Nils Blattner  <nb@cabag.ch>
+	* version 0.1.0
+	* major code refactoring
+	* cleaned up some comments
+	* moved typoscript comment into README.txt and added usage information
+	* fixed a bug that extbase style typoscript was not recognized
+	* changed default locallang to the extbase_pager folder (remnant from the original name)
+
 2010-04-07 Nils Blattner  <nb@cabag.ch>
 
 	* initial code generated with kickstarter
+	

@@ -8,7 +8,6 @@
  * @return void
  */
 function pagerJSkeyup(event, el, lower, upper) {
-	var form = el.up('form');
 	var value = pagerParseInt_(el.value);
 	if (value < lower) {
 		value = lower;

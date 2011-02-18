@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<T3locallang>
+	<meta type="array">
+		<type>Frontend</type>
+		<description>Language labels for the pager of the extension 'extbase_pager'.</description>
+	</meta>
+	<data type="array">
+		<languageKey index="default" type="array">
+			<label index="pager.first">First page</label>
+			<label index="pager.previous">back</label>
+			<label index="pager.next">next</label>
+			<label index="pager.last">Last page</label>
+			<label index="pager.more">...</label>
+			<label index="pager.current">Current page</label>
+			<label index="pager.jumpTo">Enter a page number and hit enter to jump to the page number.</label>
+		</languageKey>
+		<languageKey index="de" type="array">
+			<label index="pager.first">Erste Seite</label>
+			<label index="pager.previous">zurück</label>
+			<label index="pager.next">weiter</label>
+			<label index="pager.last">Letzte Seite</label>
+			<label index="pager.more">...</label>
+			<label index="pager.current">Aktive Seite</label>
+			<label index="pager.jumpTo">Geben Sie eine Seite ein und drücken Sie Enter um zu der Seite zu springen.</label>
+		</languageKey>
+	</data>
+</T3locallang>

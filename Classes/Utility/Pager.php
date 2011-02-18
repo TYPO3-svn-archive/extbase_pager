@@ -47,28 +47,30 @@ class Tx_ExtbasePager_Utility_Pager {
 			return 0;
 		}
 		
-		// make sure page/itemsPerPage are valid
-		$page = intval($page);
-		$itemsPerPage = intval($itemsPerPage);
-		
-		if ($page < 1) {
-			$page = 1;
-		}
-		if ($itemsPerPage < 1) {
-			$itemsPerPage = 1;
-		}
-		
 		// count must be done before limit/offset!
 		$count = $query->count();
 		
-		$pageCount = intval(ceil($count / $itemsPerPage));
-		
-		if ($page > $pageCount) {
-			$page = $pageCount;
-		}
+		$pageCount = self::prepareNumbers($page, $itemsPerPage, $count);
 		
 		$query->setLimit($itemsPerPage)
 			->setOffset($itemsPerPage * ($page - 1));
+		
+		return $pageCount;
+	}
+	
+	/**
+	 * Prepares an array for use with a pager and returns the amount of pages there are.
+	 * Usage: Pass on the full array to this function and it will be cut.
+	 *
+	 * @param array $array The array to prepare.
+	 * @param int $page The current page. Note: This value can be altered by this function in respect to the total amount of pages available!
+	 * @param int $itemsPerPage The amount of items will be displayed per page.
+	 * @return int The total amount of pages.
+	 */
+	public static function prepareArray(array &$array = array(), &$page = 1, $itemsPerPage = 10) {
+		$pageCount = self::prepareNumbers($page, $itemsPerPage, count($array));
+		
+		$array = array_slice($array, ($page - 1) * $itemsPerPage, $itemsPerPage);
 		
 		return $pageCount;
 	}
@@ -85,6 +87,35 @@ class Tx_ExtbasePager_Utility_Pager {
 		$mergedParameters = t3lib_div::array_merge_recursive_overrule($getParameter, $postParameter);
 		
 		return $mergedParameters;
+	}
+	
+	/**
+	 * Prepares the numeric values to be processed for the pager.
+	 *
+	 * @param int $page The current page. Note: This value can be altered by this function in respect to the total amount of pages available!
+	 * @param int $itemsPerPage The amount of items will be displayed per page. Note: This value can be altered if it is too low.
+	 * @param int $count The total amount of items that could be displayed.
+	 * @return int The total amount of pages. Will be at least 1.
+	 */
+	public static function prepareNumbers(&$page = 1, &$itemsPerPage = 10, $count = 0) {
+		// make sure page/itemsPerPage are valid
+		$page = intval($page);
+		$itemsPerPage = intval($itemsPerPage);
+		
+		if ($itemsPerPage < 1) {
+			$itemsPerPage = 1;
+		}
+		
+		$pageCount = intval(ceil($count / $itemsPerPage));
+		
+		// after this, the page will be at least 1
+		if ($page < 1 || $pageCount === 0) {
+			$page = 1;
+		} else if ($page > $pageCount) {
+			$page = $pageCount;
+		}
+		
+		return $pageCount;
 	}
 }
 

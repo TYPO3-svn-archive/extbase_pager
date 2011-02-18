@@ -1,0 +1,22 @@
+plugin.tx_extbasepager {
+	persistence {
+		
+	}
+	settings {
+		
+	}
+}
+
+plugin.tx_extbasepager._CSS_DEFAULT_STYLE (
+	ul.pager li {
+		display: block;
+		float: left;
+		padding: 0 !important;
+		margin-right: 3px;
+		background: none !important;
+	}
+	
+	ul.pager li fieldset {
+		padding: 0 !important;
+	}
+)

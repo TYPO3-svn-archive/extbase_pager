@@ -26,10 +26,12 @@
 
 /**
  * This class is a pager view helper for the Fluid templating engine.
+ * 
  * @see Tx_ExtbasePager_Utility_Pager for utility
  *
  * @package TYPO3
  * @subpackage extbase_pager
+ * @author Nils Blattner <nb@cabag.ch>
  */
 class Tx_ExtbasePager_ViewHelpers_PagerViewHelper extends Tx_Fluid_Core_ViewHelper_AbstractViewHelper {
 	/**
@@ -38,17 +40,32 @@ class Tx_ExtbasePager_ViewHelpers_PagerViewHelper extends Tx_Fluid_Core_ViewHelp
 	protected $contentObject;
 
 	/**
-	 * @var array
+	 * @var array The global TypoScript.
+	 */
+	protected $globalTypoScriptSetup;
+
+	/**
+	 * @var array The pager TypoScript.
 	 */
 	protected $typoScriptSetup;
+
+	/**
+	 * @var array The order of the segments.
+	 */
+	protected $order;
+
+	/**
+	 * @var string This will hold a '.' for old school TS and will be empty for ExtBase TS.
+	 */
+	protected $typoScriptSeparator = '';
 	
 	/**
-	 * @var string
+	 * @var string The calling extension name.
 	 */
 	protected $extensionName;
 	
 	/**
-	 * @var string
+	 * @var string The calling plugin name.
 	 */
 	protected $pluginName;
 
@@ -63,202 +80,14 @@ class Tx_ExtbasePager_ViewHelpers_PagerViewHelper extends Tx_Fluid_Core_ViewHelp
 	public function __construct($contentObject = NULL, array $typoScriptSetup = NULL) {
 		$this->contentObject = $contentObject !== NULL ? $contentObject : t3lib_div::makeInstance('tslib_cObj');
 		if ($typoScriptSetup !== NULL) {
-			$this->typoScriptSetup = &$typoScriptSetup;
-		} else {
-			$configurationManager = Tx_Extbase_Dispatcher::getConfigurationManager();
-			$this->typoScriptSetup = &$configurationManager->loadTypoScriptSetup();
+			$this->globalTypoScriptSetup = &$typoScriptSetup;
 		}
 		if (TYPO3_MODE === 'BE') {
-				// this is a hacky work around to enable this view helper for backend mode
+			// this is a hacky work around to enable this view helper for backend mode
 			$GLOBALS['TSFE']->cObjectDepthCounter = 100;
 		}
 	}
 	
-	/*
-// in each subitem, value + outerWrap have stdWrap properties
-// current is set to the page number the link will point to
-// following fields are given:
-//	activePage => page that is shown at the moment
-//	title => title of the current item (can be a number for items or localized text for last/next etc)
-//	lastPage => last page that could be shown
-//	page => page number the link will point to
-plugin.tx_sdfdsifj.settings.pager {
-	// basic configuration
-	
-	// can be static -> same amount (max) on each side of the current page (default), auto -> tries to always show the same amount of pager links (ignores maxBefore/maxAfter if only one is set), growing -> tries to give as many links to previous pages as possible
-	style = auto
-	// if set with maxAfter it will override style and max, overrides growing style
-	maxBefore = 3
-	// if set with maxBefore it will override style and max
-	maxAfter = 5
-	// total maximum of pages shown, default is 5. If it is an even number, pages towards the end are favoured. 5 is default.
-	max = 5
-	// if the max is even the pages towards the start are favoured
-	favourStart = 1
-	// does not wrap the pager in ul tags
-	noUlWrap = 1
-	// the class to add to the ul, "pager" by default
-	class = someClassForUl
-	// stdwrap around the pager, simple wrap if only a string, full stdwrap if its an array
-	stdWrap = <div id="someId">|</div>
-	stdWrap {
-		wrap3 = <div id="someId">|</div>
-	}
-	// namespace for the page/lastPage arguments default is the namespace of the extension running the pager
-	GPnamespace = tx_extkey_pi1
-	// order of display, omitted keywords are appended. This is the default order.
-	order = current,first,previous,items,next,last,jumpto
-	// reverse the order, say for float: right (also reverses the items etc)
-	reverse = 1
-	// alternate page key for the GPvars, 'page' by default
-	pageKey = page
-	// alternate lastPage key for the GPvars, 'lastPage' by default
-	lastPageKey = lastPage
-	// include the lastPage parameter to the links, not included by default
-	includeLastPage = 1
-	
-	active {
-		// the current page item
-		// hide the current page
-		doNotDisplay = 1
-		// do not link the current page
-		doNotLinkIt = 1
-		// default is 'active'
-		class = someClass
-		// this is the default if value is not set
-		value.current = 1
-		// active page is not wrapped in li tags
-		noLiWrap = 1
-		outerWrap {
-			// stdWrap around the link
-		}
-	}
-	item {
-		// the items shown before/after the current
-		// hide the current item
-		doNotDisplay = 1
-		// no class as default
-		class = someClass
-		// this is the default if value is not set
-		value.current = 1
-		// pages are not wrapped in li tags
-		noLiWrap = 1
-		outerWrap {
-			// stdWrap around the link
-		}
-		// added between the items (including active item)
-		separator = <li class="separator">|</li>
-	}
-	more {
-		// ... before and after the page items
-		// hide the ...
-		doNotDisplay = 1
-		// 'more' as default
-		class = someClass
-		// this is the default if value is not set (stdwrap as the other values)
-		value = ...
-		// ... are not wrapped in li tags
-		noLiWrap = 1
-		outerWrap {
-			// stdWrap around the ...
-		}
-	}
-	first {
-		// the link pointing to the first page (1)
-		// hide the 'first page' link
-		doNotDisplay = 1
-		// default is 'first'
-		class = someClass
-		// this is the default if value is not set
-		value.field = title
-		// hidden by default if only one page exists
-		showIfOnePage = 1
-		// hidden by default if the current page is the first
-		showIfFirstPage = 1
-		// first page link is not wrapped in li tags
-		noLiWrap = 1
-		outerWrap {
-			// stdWrap around the link
-		}
-	}
-	last {
-		// the link pointing to the last page that can be shown
-		// hide the 'last page' link
-		doNotDisplay = 1
-		// default is 'last'
-		class = someClass
-		// this is the default if value is not set
-		value.field = title
-		// hidden by default if only one page exists
-		showIfOnePage = 1
-		// hidden by default if the current page is the last
-		showIfLastPage = 1
-		// last page link is not wrapped in li tags
-		noLiWrap = 1
-		outerWrap {
-			// stdWrap around the link
-		}
-	}
-	previous {
-		// the link pointing to the previous page
-		// not shown when there is no page before!
-		// hide the 'previous page' link
-		doNotDisplay = 1
-		// default is 'previous'
-		class = someClass
-		// this is the default if value is not set
-		value.field = title
-		// previous page link is not wrapped in li tags
-		noLiWrap = 1
-		outerWrap {
-			// stdWrap around the link
-		}
-	}
-	next {
-		// the link pointing to the next page
-		// not shown when there is no page after!
-		// hide the 'next page' link
-		doNotDisplay = 1
-		// default is 'next'
-		class = someClass
-		// this is the default if value is not set
-		value.field = title
-		// next page link is not wrapped in li tags
-		noLiWrap = 1
-		outerWrap {
-			// stdWrap around the link
-		}
-	}
-	jumpto {
-		// the form field to jump to a page directly
-		// hide the jumpto field
-		doNotDisplay = 1
-		// default is 'jumpto'
-		class = someClass
-		// this is the default if value is not set
-		value.current = 1
-		// jumpto field is not wrapped in li tags
-		noLiWrap = 1
-		outerWrap {
-			// stdWrap around the link
-		}
-	}
-	current {
-		// the item displaying what page is currently displayed
-		// hide the current info
-		doNotDisplay = 1
-		// default is 'current'
-		class = someClass
-		// this is the default if value is not set
-		value = {field:title}: {field:activePage} / {field:lastPage}
-		// current page info is not wrapped in li tags
-		noLiWrap = 1
-		outerWrap {
-			// stdWrap around the info
-		}
-	}
-}
-	*/
 	/**
 	 * Renders the pager with the given typoscript setup.
 	 *
@@ -270,7 +99,7 @@ plugin.tx_sdfdsifj.settings.pager {
 	 * @return string The rendered pager
 	 * @author Nils Blattner <nb@cabag.ch>
 	 */
-	 public function render($typoscript = array(), $page = -1, $lastPage = -1, $localLang = 'EXT:cabag_extbase/Resources/Private/Language/locallang.xml', $llPrefix = 'pager.') {
+	 public function render($typoscript = array(), $page = -1, $lastPage = -1, $localLang = 'EXT:extbase_pager/Resources/Private/Language/locallang.xml', $llPrefix = 'pager.') {
 		$request = $this->controllerContext->getRequest();
 		$this->extensionName = $request->getControllerExtensionName();
 		$this->pluginName = $request->getPluginName();
@@ -280,60 +109,248 @@ plugin.tx_sdfdsifj.settings.pager {
 		
 		$this->request = $request;
 		
+		$this->resolveTypoScript($typoscript)
+			->injectDefaultValuesToSettings();
+		
+		$content = '';
+		
+		$pArray = $this->resolvePage($page, $lastPage);
+		$page = $pArray['page'];
+		$lastPage = $pArray['lastPage'];
+		
+		$sArray = $this->resolveStartEnd($page, $lastPage);
+		$start = $sArray['start'];
+		$end = $sArray['end'];
+		
+		$this->order = $this->getOrder();
+		
+		// translation prefix
+		$this->locallangPrefix = empty($localLang) ? $llPrefix : 'LLL:' . $localLang . ':' . $llPrefix;
+		
+		// fields that will be accessible through typoscript
+		$fields = array(
+			'activePage' => $page,
+			'lastPage' => $lastPage,
+			'page' => 0,
+			'title' => '',
+		);
+		
+		if ($this->typoScriptSetup['includeLastPage']) {
+			$this->linkArguments[$this->namespace][$this->typoScriptSetup['lastPageKey']] = $lastPage;
+		}
+		
+		// link to first page
+		$ts = $this->typoScriptSetup['first' . $this->typoScriptSeparator];
+		if (empty($ts['doNotDisplay']) && ($page > 1 || !empty($ts['showIfFirstPage'])) && ($lastPage > 1 || !empty($ts['showIfOnePage']))) {
+			$ts['class'] = empty($ts['class']) ? 'first' : $ts['class'];
+			$this->order['first'] = $this->renderItem($ts, 1, $page, $lastPage, $fields, $this->translate($this->locallangPrefix . 'first'));
+		}
+		
+		// link to previous page
+		$ts = $this->typoScriptSetup['previous' . $this->typoScriptSeparator];
+		if (empty($ts['doNotDisplay']) && ($page > 1)) {
+			$ts['class'] = empty($ts['class']) ? 'previous' : $ts['class'];
+			$this->order['previous'] = $this->renderItem($ts, $page - 1, $page, $lastPage, $fields, $this->translate($this->locallangPrefix . 'previous'));
+		}
+		
+		// statics
+		$itemClass = empty($this->typoScriptSetup['item' . $this->typoScriptSeparator]['class']) ? 'item' : $this->typoScriptSetup['item' . $this->typoScriptSeparator]['class'];
+		$activeClass = empty($this->typoScriptSetup['active' . $this->typoScriptSeparator]['class']) ? 'active' : $this->typoScriptSetup['active' . $this->typoScriptSeparator]['class'];
+		$separator = empty($this->typoScriptSetup['item' . $this->typoScriptSeparator]['separator']) ? '' : $this->typoScriptSetup['item' . $this->typoScriptSeparator]['separator'];
+		
+		if ($this->typoScriptSetup['includeLastPage']) {
+			$this->linkArguments[$this->namespace][$this->typoScriptSetup['lastPageKey']] = $lastPage;
+		}
+		
+		// go through each page number
+		for ($p = $start; $p <= $end; $p++) {
+			$linkIt = true;
+			$class = $itemClass;
+			if ($page == $p) {
+				$key = 'active';
+				$class .= ' ' . $activeClass;
+			} else {
+				$key = 'item';
+			}
+			
+			$ts = $conf[$key . $this->typoScriptSeparator];
+			$ts = empty($ts) ? array() : $ts;
+			
+			$ts['class'] = $class;
+			
+			$this->linkArguments[$this->namespace][$this->typoScriptSetup['pageKey']] = $p;
+			
+			if (empty($ts['doNotDisplay'])) {
+				$value = $this->renderItem($ts, $p, $page, $lastPage, $fields, $p);
+				
+				// append/prepend the segment
+				if ($this->typoScriptSetup['reverse']) {
+					$this->order['items'] = $value . "\n" . ($p != $start ? $separator : '') . $this->order['items'];
+				} else {
+					$this->order['items'] .= ($p != $start ? $separator : '') . $value . "\n";
+				}
+			}
+		}
+		
+		// text before/after the page links
+		$ts = $this->typoScriptSetup['more' . $this->typoScriptSeparator];
+		if (empty($ts['doNotDisplay'])) {
+			$ts['class'] = empty($ts['class']) ? 'more' : $ts['class'];
+			$ts['doNotLinkIt'] = true;
+			$value = $this->renderItem($ts, $page, $page, $lastPage, $fields, $this->translate($this->locallangPrefix . 'more'));
+			
+			if ($start > 1) {
+				if ($this->typoScriptSetup['reverse']) {
+					$this->order['items'] .= $value . "\n";
+				} else {
+					$this->order['items'] = $value . "\n" . $order['items'];
+				}
+			}
+			if ($end < $lastPage) {
+				if ($this->typoScriptSetup['reverse']) {
+					$this->order['items'] = $value . "\n" . $order['items'];
+				} else {
+					$this->order['items'] .= $value . "\n";
+				}
+			}
+		}
+		
+		// link to next page
+		$ts = $this->typoScriptSetup['next' . $this->typoScriptSeparator];
+		if (empty($ts['doNotDisplay']) && ($page < $lastPage)) {
+			$ts['class'] = empty($ts['class']) ? 'next' : $ts['class'];
+			$this->order['next'] = $this->renderItem($ts, $page + 1, $page, $lastPage, $fields, $this->translate($this->locallangPrefix . 'next'));
+		}
+		
+		// link to last page
+		$ts = $this->typoScriptSetup['last' . $this->typoScriptSeparator];
+		if (empty($ts['doNotDisplay']) && ($page < $lastPage || !empty($ts['showIfLastPage'])) && ($lastPage > 1 || !empty($ts['showIfOnePage']))) {
+			$ts['class'] = empty($ts['class']) ? 'last' : $ts['class'];
+			$this->order['last'] = $this->renderItem($ts, $lastPage, $page, $lastPage, $fields, $this->translate($this->locallangPrefix . 'last'));
+		}
+		
+		// jumpto field
+		$ts = $this->typoScriptSetup['jumpto' . $this->typoScriptSeparator];
+		if (empty($ts['doNotDisplay'])) {
+			$this->order['jumpto'] = $this->renderJumpTo($ts, $page, $lastPage, $fields);
+		}
+		
+		// info about the current page/last page
+		$ts = $this->typoScriptSetup['current' . $this->typoScriptSeparator];
+		if (empty($ts['doNotDisplay'])) {
+			$ts['class'] = empty($ts['class']) ? 'current' : $ts['class'];
+			$ts['doNotLinkIt'] = true;
+			$title = $this->translate($llPrefix . 'current');
+			
+			$order['current'] = $this->renderItem($ts, $page, $page, $lastPage, $fields, $title, $title . ': ' . $page . '/' . $lastPage);
+		}
+		
+		// reassemble the content by order
+		$content = "\n" . implode("\n", $this->order) . "\n";
+		
+		if (!$this->typoScriptSetup['noUlWrap']) {
+			$content = '<ul' . $this->typoScriptSetup['class'] . '>' . $content . '</ul>';
+		}
+		
+		if (!empty($this->typoScriptSetup['stdWrap' . $this->typoScriptSeparator])) {
+			$content = $this->contentObject->stdWrap($content, $this->typoScriptSetup['stdWrap' . $this->typoScriptSeparator]);
+		}
+		if (!empty($this->typoScriptSetup['stdWrap'])) {
+			$content = $this->contentObject->wrap($content, $this->typoScriptSetup['stdWrap']);
+		}
+		return $content;
+	}
+	
+	/**
+	 * Finds the TypoScript to use and stores it in the field typoScriptSetup.
+	 * 
+	 * @param mixed $typoscript Either 
+	 * @throws Tx_Fluid_Core_ViewHelper_Exception
+	 */
+	public function resolveTypoScript($typoscript) {
 		// get the typoscript configuration either from an object path or from the array given
 		$conf = array();
+		
+		$this->typoScriptSeparator = '.';
 		if (is_string($typoscript)) {
+			if (!is_array($this->globalTypoScriptSetup) || !count($this->globalTypoScriptSetup)) {
+				// this class is not part of the open API
+				$configurationManager = Tx_Extbase_Dispatcher::getConfigurationManager();
+				
+				if (method_exists($configurationManager, 'loadTypoScriptSetup')) {
+					// extbase pre 1.3.0
+					$this->globalTypoScriptSetup = &$configurationManager->loadTypoScriptSetup();
+				} else {
+					// API change at extbase 1.3.0
+					$this->globalTypoScriptSetup = &$configurationManager->getConfiguration(Tx_Extbase_Configuration_ConfigurationManagerInterface::CONFIGURATION_TYPE_FULL_TYPOSCRIPT);
+				}
+			}
 			// code taken from CObjectViewHelper
 			$pathSegments = t3lib_div::trimExplode('.', $typoscript, true);
-			$conf = $this->typoScriptSetup;
+			$conf = &$this->globalTypoScriptSetup;
 			foreach ($pathSegments as $segment) {
-				if (!array_key_exists($segment . '.', $conf)) {
+				if (!array_key_exists($segment . $this->typoScriptSeparator, $conf)) {
 					throw new Tx_Fluid_Core_ViewHelper_Exception('TypoScript object path "' . htmlspecialchars($typoscript) . '" does not exist' , 1253191023);
 				}
-				$conf = $conf[$segment . '.'];
+				$conf = &$conf[$segment . $this->typoScriptSeparator];
 			}
 		} else if (is_array($typoscript)) {
 			// $typoscript is supposed to be the config directly
-			$conf = $typoscript;
+			$conf = &$typoscript;
+			$this->typoScriptSeparator = '';
 		} else {
 			$type = get_class($typoscript);
 			$type = $type ? $type : gettype($typoscript);
 			throw new Tx_Fluid_Core_ViewHelper_Exception('Property typoscript must be of type array or string, ' . $type . ' given.' , 1253191023);
 		}
 		
-		$content = '';
+		$this->typoScriptSetup = &$conf;
 		
-		// configurations
-		$style = !empty($conf['style']) ? strtolower($conf['style']) : false;
-		$maxBefore = !empty($conf['maxBefore']) ? intval($conf['maxBefore']) : 0;
-		$maxAfter = !empty($conf['maxAfter']) ? intval($conf['maxAfter']) : 0;
-		$max = !empty($conf['max']) ? intval($conf['max']) : 5;
-		$noUlWrap = !empty($conf['noUlWrap']) ? true : false;
-		$favourStart = empty($conf['favourStart']) ? false : true;
-		$includeLastPage = empty($conf['includeLastPage']) ? false : true;
-		$pageKey = !empty($conf['pageKey']) ? $conf['pageKey'] : 'page';
-		$lastPageKey = !empty($conf['lastPageKey']) ? $conf['lastPageKey'] : 'lastPage';
-		$reverse = empty($conf['reverse']) ? false : true;
+		return $this;
+	}
+	
+	/**
+	 * Make sure the default values are set in the typoscript.
+	 * 
+	 * @return void
+	 */
+	public function injectDefaultValuesToSettings() {
+		$this->typoScriptSetup['style'] = !empty($this->typoScriptSetup['style']) ? strtolower($this->typoScriptSetup['style']) : false;
+		$this->typoScriptSetup['maxBefore'] = !empty($this->typoScriptSetup['maxBefore']) ? intval($this->typoScriptSetup['maxBefore']) : 0;
+		$this->typoScriptSetup['maxAfter'] = !empty($this->typoScriptSetup['maxAfter']) ? intval($this->typoScriptSetup['maxAfter']) : 0;
+		$this->typoScriptSetup['max'] = !empty($this->typoScriptSetup['max']) ? intval($this->typoScriptSetup['max']) : 5;
+		$this->typoScriptSetup['noUlWrap'] = !empty($this->typoScriptSetup['noUlWrap']) ? true : false;
+		$this->typoScriptSetup['favourStart'] = empty($this->typoScriptSetup['favourStart']) ? false : true;
+		$this->typoScriptSetup['includeLastPage'] = empty($this->typoScriptSetup['includeLastPage']) ? false : true;
+		$this->typoScriptSetup['pageKey'] = !empty($this->typoScriptSetup['pageKey']) ? $this->typoScriptSetup['pageKey'] : 'page';
+		$this->typoScriptSetup['lastPageKey'] = !empty($this->typoScriptSetup['lastPageKey']) ? $this->typoScriptSetup['lastPageKey'] : 'lastPage';
+		$this->typoScriptSetup['reverse'] = empty($this->typoScriptSetup['reverse']) ? false : true;
 		
-		if (isset($conf['class'])) {
-			$ulClass = !empty($conf['class']) ? ' class="' . $conf['class'] . '"' : '';
+		if (isset($this->typoScriptSetup['class'])) {
+			$this->typoScriptSetup['class'] = !empty($this->typoScriptSetup['class']) ? ' class="' . $this->typoScriptSetup['class'] . '"' : '';
 		} else {
-			$ulClass = ' class="pager"';
+			$this->typoScriptSetup['class'] = ' class="pager"';
 		}
 		
-		// get the proper arguments
-		$arguments = Tx_ExtbasePager_Utility_Pager::getAllGPArguments();
-		unset($arguments['L']);
-		unset($arguments['cHash']);
-		
-		if (!empty($conf['GPnamespace'])) {
-			$namespace = $conf['GPnamespace'];
-			
-		} else {
-			$namespace = 'tx_' . strtolower($this->extensionName) . '_' . strtolower($this->pluginName);
+		if ($this->typoScriptSetup['maxBefore']) {
+			if ($this->typoScriptSetup['maxAfter']) {
+				$this->typoScriptSetup['style'] = 'static';
+				$this->typoScriptSetup['max'] = $this->typoScriptSetup['maxAfter'] + $this->typoScriptSetup['maxBefore'] + 1;
+			} else if ($this->typoScriptSetup['style'] == 'growing') {
+				$this->typoScriptSetup['style'] = 'static';
+			}
 		}
 		
-		// manage the order
+		return $this;
+	}
+	
+	/**
+	 * Returns the order that the parts should be displayed in.
+	 * 
+	 * @return array Array with the keys representing (future) content of each section.
+	 */
+	public function getOrder() {
+		// manage the default order
 		$defaultOrder = array(
 			'current' => '',
 			'first' => '',
@@ -345,9 +362,9 @@ plugin.tx_sdfdsifj.settings.pager {
 		);
 		$order = array();
 		
-		if (!empty($conf['order'])) {
+		if (!empty($this->typoScriptSetup['order'])) {
 			// there is a order defined by typoscript
-			$tOrder = t3lib_div::trimExplode(',', $conf['order'], true);
+			$tOrder = t3lib_div::trimExplode(',', $this->typoScriptSetup['order'], true);
 			// add each part by its order -> array will be in the given order, any keywords that are wrong will be omitted
 			foreach ($tOrder as $part) {
 				$order[$part] = '';
@@ -361,422 +378,258 @@ plugin.tx_sdfdsifj.settings.pager {
 			$order = $defaultOrder;
 		}
 		
-		if ($reverse) {
+		if ($this->typoScriptSetup['reverse']) {
 			// reverse the array but preserve the keys!
 			$order = array_reverse($order, true);
 		}
 		
+		return $order;
+	}
+	
+	/**
+	 * Resolves and fixes page and last page variables.
+	 * 
+	 * @param int $page The page number to display.
+	 * @param int $lastPage The page number of the last page.
+	 * @return array Array containing the page and lastPage (as keys).
+	 */
+	public function resolvePage($page, $lastPage) {
+		if (!empty($this->typoScriptSetup['GPnamespace'])) {
+			$this->namespace = $this->typoScriptSetup['GPnamespace'];
+		} else {
+			$this->namespace = 'tx_' . strtolower($this->extensionName) . '_' . strtolower($this->pluginName);
+		}
+		
+		// get the proper arguments
+		$this->linkArguments = Tx_ExtbasePager_Utility_Pager::getAllGPArguments();
+		unset($this->linkArguments['L']);
+		unset($this->linkArguments['cHash']);
+		
 		// make sure that the page and lastPage are valid or get them from the request if possible
 		$page = intval($page);
 		if ($page < 1) {
-			$page = intval($arguments[$namespace][$pageKey]);
+			$page = intval($this->linkArguments[$this->namespace][$this->typoScriptSetup['pageKey']]);
 		}
 		$page = $page < 1 ? 1 : $page;
 		$lastPage = intval($lastPage);
 		if ($lastPage < 1) {
-			$lastPage = intval($arguments[$namespace][$lastPageKey]);
+			$lastPage = intval($this->linkArguments[$this->namespace][$this->typoScriptSetup['lastPageKey']]);
 		}
-		if (!$includeLastPage) {
-			unset($arguments[$namespace][$lastPageKey]);
+		if (!$this->typoScriptSetup['includeLastPage']) {
+			unset($this->linkArguments[$this->namespace][$this->typoScriptSetup['lastPageKey']]);
 		}
 		$lastPage = $lastPage > $page ? $lastPage : $page;
 		
-		if ($maxBefore) {
-			if ($maxAfter) {
-				$style = 'static';
-				$max = $maxAfter + $maxBefore + 1;
-			} else if ($style == 'growing') {
-				$style = 'static';
-			}
+		return array('page' => $page, 'lastPage' => $lastPage);
+	}
+	
+	/**
+	 * Resolves and fixes start and end of the pages to be displayed.
+	 * 
+	 * @param int $page The page number to display.
+	 * @param int $lastPage The page number of the last page.
+	 * @return array Array containing the start and end (as keys).
+	 */
+	public function resolveStartEnd($page, $lastPage) {
+		if ($this->typoScriptSetup['style'] == 'auto') {
+			return $this->resolveStartEndForAuto($page, $lastPage);
+		} else if ($this->typoScriptSetup['style'] == 'growing') {
+			// TODO
+			return $this->resolveStartEndForGrowing($page, $lastPage);
+		} else {
+			return $this->resolveStartEndForStatic($page, $lastPage);
 		}
-		
+	}
+	
+	/**
+	 * Returns the start and end variables for an variable pager.
+	 * 
+	 * @param int $page The start and end number to display.
+	 * @param int $lastPage The page number of the last page.
+	 * @return array Array containing the start and end (as keys).
+	 */
+	public function resolveStartEndForAuto($page, $lastPage) {
 		$start = 1;
 		$end = $lastPage;
-		if ($style == 'auto') {
-			if ($maxBefore) {
-				// $maxAfter cannot be set
-				if ($page > $maxBefore) {
-					// active page is 'far' away from the start (page 1)
-					$start = $page - $maxBefore;
-				}
-				$end = $end > ($start + $max) ? $start + $max : $end;
-			} else if ($maxAfter) {
-				// $maxBefore cannot be set
-				if ($page < $end - $maxAfter) {
-					// active page is 'far' away from the end
-					$end = $page + $maxAfter;
-				}
-				$start = $start < ($end - $max) ? $end - $max : $start;
-			} else {
-				// neither $maxBefore nor $maxAfter is set
-				$side = floor(($max - 1) / 2);
-				if ($start < $page - $side) {
-					// enough space towards first page
-					$start = $end > ($page + $side) ? $page - $side : $end - $max;
-					$start = $start < 1 ? 1 : $start;
-				}
-				$end = $end > ($start + $max) ? $start + $max : $end;
+		
+		if ($this->typoScriptSetup['maxBefore']) {
+			// $this->typoScriptSetup['maxAfter'] cannot be set
+			if ($page > $this->typoScriptSetup['maxBefore']) {
+				// active page is 'far' away from the start (page 1)
+				$start = $page - $this->typoScriptSetup['maxBefore'];
 			}
-		} else if ($style == 'growing') {
-			// TODO
+			$end = $end > ($start + $this->typoScriptSetup['max']) ? $start + $this->typoScriptSetup['max'] : $end;
+		} else if ($this->typoScriptSetup['maxAfter']) {
+			// $this->typoScriptSetup['maxBefore'] cannot be set
+			if ($page < $end - $this->typoScriptSetup['maxAfter']) {
+				// active page is 'far' away from the end
+				$end = $page + $this->typoScriptSetup['maxAfter'];
+			}
+			$start = $start < ($end - $this->typoScriptSetup['max']) ? $end - $this->typoScriptSetup['max'] : $start;
 		} else {
-			if (!$maxBefore) {
-				$maxBefore = $maxAfter ? $max - 1 - $maxAfter : floor(($max - 1) / 2);
+			// neither $this->typoScriptSetup['maxBefore'] nor $this->typoScriptSetup['maxAfter'] is set
+			$side = floor(($this->typoScriptSetup['max'] - 1) / 2);
+			if ($start < $page - $side) {
+				// enough space towards first page
+				$start = $end > ($page + $side) ? $page - $side : $end - $this->typoScriptSetup['max'];
+				$start = $start < 1 ? 1 : $start;
 			}
-			$maxAfter = $maxAfter ? $maxAfter : $max - 1 - $maxBefore;
-			
-			if ($favourStart && ($max % 2) == 0) {
-				$maxAfter--;
-				$maxBefore++;
-			}
-			
-			$start = $page > $maxBefore ? $page - $maxBefore : $start;
-			$end = $page + $maxAfter > $end ? $end : $page + $maxAfter;
+			$end = $end > ($start + $this->typoScriptSetup['max']) ? $start + $this->typoScriptSetup['max'] : $end;
 		}
 		
-		// translation prefix
-		$llPrefix = empty($localLang) ? $llPrefix : 'LLL:' . $localLang . ':' . $llPrefix;
+		return array('start' => $start, 'end' => $end);
+	}
+	
+	/**
+	 * @param int $page The start and end number to display for a static pager.
+	 * 
+	 * @param int $page The page number to display.
+	 * @param int $lastPage The page number of the last page.
+	 * @return array Array containing the start and end (as keys).
+	 */
+	public function resolveStartEndForStatic($page, $lastPage) {
+		$start = 1;
+		$end = $lastPage;
 		
-		// fields that will be accessible through typoscript
-		$fields = array(
-			'activePage' => $page,
-			'lastPage' => $lastPage,
-			'page' => 0,
-			'title' => '',
-		);
+		if (!$this->typoScriptSetup['maxBefore']) {
+			$this->typoScriptSetup['maxBefore'] = $this->typoScriptSetup['maxAfter'] ? $this->typoScriptSetup['max'] - 1 - $this->typoScriptSetup['maxAfter'] : floor(($this->typoScriptSetup['max'] - 1) / 2);
+		}
+		$this->typoScriptSetup['maxAfter'] = $this->typoScriptSetup['maxAfter'] ? $this->typoScriptSetup['maxAfter'] : $this->typoScriptSetup['max'] - 1 - $this->typoScriptSetup['maxBefore'];
 		
+		if ($this->typoScriptSetup['favourStart'] && ($this->typoScriptSetup['max'] % 2) == 0) {
+			$this->typoScriptSetup['maxAfter']--;
+			$this->typoScriptSetup['maxBefore']++;
+		}
 		
-		// link to first page
-		$ts = $conf['first.'];
-		if (empty($ts['doNotDisplay']) && ($page > 1 || !empty($ts['showIfFirstPage'])) && ($lastPage > 1 || !empty($ts['showIfOnePage']))) {
-			$ts = empty($ts) ? array() : $ts;
-			$fields['page'] = 1;
-			$title = $this->translate($llPrefix . 'first');
-			$fields['title'] = $title;
-			$class = empty($ts['class']) ? 'first' : $ts['class'];
-			$class = ' class="' . $class . '"';
-			
-			$value = $this->confStdWrap($ts, 'value', '', NULL, 'page', $fields, $title);
-			
-			$arguments[$namespace][$pageKey] = $fields['page'];
-			if ($includeLastPage) {
-				$arguments[$namespace][$lastPageKey] = $lastPage;
-			}
-			
-			// generate the uri to itself
+		$start = $page > $this->typoScriptSetup['maxBefore'] ? $page - $this->typoScriptSetup['maxBefore'] : $start;
+		$end = $page + $this->typoScriptSetup['maxAfter'] > $end ? $end : $page + $this->typoScriptSetup['maxAfter'];
+		
+		return array('start' => $start, 'end' => $end);
+	}
+	
+	/**
+	 * Dongle method at the moment.
+	 * TODO: implement google like growing pager.
+	 * 
+	 * @param int $page The page number to display.
+	 * @param int $lastPage The page number of the last page.
+	 * @return array Array containing the start and end (as keys).
+	 */
+	public function resolveStartEndForGrowing($page, $lastPage) {
+		return array('start' => 0, 'end' => 0);
+	}
+	
+	/**
+	 * Renders a pager segment.
+	 *
+	 * @param array $ts The typoscript for the segment.
+	 * @param int $linkPage The page number to link to.
+	 * @param int $page The current page number.
+	 * @param int $lastPage The last page number.
+	 * @param array $fields The fields that will be available in typoscript stdWraps ({field:...}).
+	 * @param string $title The title of the link and also the default text of the segment if that is not statet explicitly.
+	 * @param string $defaultValue The default text of the segment (optional).
+	 * @return string The rendered segment.
+	 */
+	public function renderItem($ts = array(), $linkPage, $page, $lastPage, array $fields = array(), $title, $defaultValue = NULL) {
+		if (!is_array($ts)) {
+			$ts = array();
+		}
+		$fields['page'] = $linkPage;
+		$fields['title'] = $title;
+		$class = ' class="' . $ts['class'] . '"';
+		
+		$value = $this->confStdWrap($ts, 'value', '', NULL, 'page', $fields, ($defaultValue === NULL ? $title : $defaultValue));
+		
+		$this->linkArguments[$this->namespace][$this->typoScriptSetup['pageKey']] = $fields['page'];
+		if ($linkPage !== $page || empty($ts['doNotLinkIt'])) {
+			// generate the uri to the page
 			$uri = $this->uriBuilder
 				->reset()
-				->setArguments($arguments)
+				->setArguments($this->linkArguments)
 				->build();
-				
+			
 			$value = '<a href="' . $uri . '" title="' . $title . '">' . $value . '</a>';
-			
-			if (empty($ts['noLiWrap'])) {
-				$value = '<li' . $class . '>' . $value . '</li>';
-			}
-			if (!empty($ts['outerWrap.'])) {
-				$value = $this->confStdWrap($ts, 'outerWrap', $value, NULL, 'page', $fields, $value);
-			}
-			
-			$order['first'] = $value;
 		}
 		
-		// link to previous page
-		$ts = $conf['previous.'];
-		if (empty($ts['doNotDisplay']) && ($page > 1)) {
-			$ts = empty($ts) ? array() : $ts;
-			$fields['page'] = $page - 1;
-			$title = $this->translate($llPrefix . 'previous');
-			$fields['title'] = $title;
-			$class = empty($ts['class']) ? 'previous' : $ts['class'];
-			$class = ' class="' . $class . '"';
-			
-			$value = $this->confStdWrap($ts, 'value', '', NULL, 'page', $fields, $title);
-			
-			$arguments[$namespace][$pageKey] = $fields['page'];
-			if ($includeLastPage) {
-				$arguments[$namespace][$lastPageKey] = $lastPage;
-			}
-			
-			// generate the uri to itself
-			$uri = $this->uriBuilder
-				->reset()
-				->setArguments($arguments)
-				->build();
-				
-			$value = '<a href="' . $uri . '" title="' . $title . '">' . $value . '</a>';
-			
-			if (empty($ts['noLiWrap'])) {
-				$value = '<li' . $class . '>' . $value . '</li>';
-			}
-			if (!empty($ts['outerWrap.'])) {
-				$value = $this->confStdWrap($ts, 'outerWrap', $value, NULL, 'page', $fields, $value);
-			}
-			
-			$order['previous'] = $value;
+		if (empty($ts['noLiWrap'])) {
+			$value = '<li' . $class . '>' . $value . '</li>';
+		}
+		if (!empty($ts['outerWrap' . $this->typoScriptSeparator])) {
+			$value = $this->confStdWrap($ts, 'outerWrap', $value, NULL, 'page', $fields, $value);
 		}
 		
-		// statics
-		$itemClass = empty($conf['item.']['class']) ? 'item' : $conf['item.']['class'];
-		$activeClass = empty($conf['active.']['class']) ? 'active' : $conf['active.']['class'];
-		$separator = empty($conf['item.']['separator']) ? '' : $conf['item.']['separator'];
+		return $value;
+	}
+	
+	/**
+	 * Renders a jump to form.
+	 * 
+	 * @param array $ts The typoscript for the jumpTo segment.
+	 * @param int $page The current page number.
+	 * @param int $lastPage The last page number.
+	 * @param array $fields The fields that will be available in typoscript stdWraps ({field:...}).
+	 * @return string The rendered jump to form.
+	 */
+	public function renderJumpTo($ts = array(), $page, $lastPage, array $fields = array()) {
+		if (!is_array($ts)) {
+			$ts = array();
+		}
+		$fields['page'] = $page;
+		$fields['title'] = $fields['page'];
+		$class = empty($ts['class']) ? 'jumpto' : $ts['class'];
+		// add pagerJumptoJS class so the javascript hooks onto the input field
+		$class = ' class="' . $class . ' pagerJumptoJS"';
+		$title = $this->translate($this->locallangPrefix . 'jumptoTitle');
 		
-		// go through each item
-		for ($p = $start; $p <= $end; $p++) {
-			$linkIt = true;
-			$class = $itemClass;
-			if ($page == $p) {
-				$key = 'active';
-				$class .= ' ' . $activeClass;
-				if (!empty($conf['active.']['doNotLinkIt'])) {
-					$linkIt = false;
-				}
-			} else {
-				$key = 'item';
-			}
-			
-			$ts = $conf[$key . '.'];
-			$ts = empty($ts) ? array() : $ts;
-			
-			if (empty($ts['doNotDisplay'])) {
-				$ts = empty($ts) ? array() : $ts;
-				$fields['page'] = $p;
-				$title = $p;
-				$fields['title'] = $title;
-				$class = ' class="' . $class . '"';
-				$value = $this->confStdWrap($ts, 'value', '', NULL, 'page', $fields, $title);
-				
-				$arguments[$namespace][$pageKey] = $p;
-				if ($includeLastPage) {
-					$arguments[$namespace][$lastPageKey] = $lastPage;
-				}
-				
-				// generate the uri to itself
-				$uri = $this->uriBuilder
-					->reset()
-					->setArguments($arguments)
-					->build();
-					
-				if ($linkIt) {
-					$value = '<a href="' . $uri . '" title="' . $title . '">' . $value . '</a>';
-				}
-				
-				if (empty($ts['noLiWrap'])) {
-					$value = '<li' . $class . '>' . $value . '</li>';
-				}
-				if (!empty($ts['outerWrap.'])) {
-					$value = $this->confStdWrap($ts, 'outerWrap', $value, NULL, 'page', $fields, $value);
-				}
-				
-				if ($reverse) {
-					$order['items'] = $value . "\n" . ($p != $start ? $separator : '') . $order['items'];
-				} else {
-					$order['items'] .= ($p != $start ? $separator : '') . $value . "\n";
-				}
+		$value = $this->confStdWrap($ts, 'value', '', NULL, 'page', $fields, $fields['page']);
+		
+		// generate the uri to itself
+		$uri = $this->uriBuilder
+			->reset()
+			->build();
+		
+		$value = '<input type="text" name="' . $this->namespace . '[' . $this->typoScriptSetup['pageKey'] . ']" value="' . $value . '" onkeyup="pagerJSkeyup(event, this, 1, ' . $lastPage . ')" title="' . $title . '" />' . "\n";
+		
+		if ($this->typoScriptSetup['includeLastPage']) {
+			$value .= '<input type="hidden" name="' . $this->namespace . '[' . $this->typoScriptSetup['lastPageKey'] . ']" value="' . $lastPage . '" />';
+		}
+		
+		// page/lastpage should not be in arguments array for the calculations that follow
+		unset($this->linkArguments[$this->namespace][$this->typoScriptSetup['pageKey']]);
+		unset($this->linkArguments[$this->namespace][$this->typoScriptSetup['lastPageKey']]);
+		
+		$argString = http_build_query($this->linkArguments, NULL, '&');
+		
+		// urldecode as it will be encoded by the browser
+		$argString = urldecode($argString);
+		
+		$flatArguments = explode('&', $argString);
+		
+		foreach ($flatArguments as $argument) {
+			list($n, $v) = explode('=', $argument);
+			if (!empty($n)) {
+				$value .= '<input type="hidden" name="' . $n . '" value="' . $v . '" />';
 			}
 		}
 		
-		// info about the current page/last page
-		$ts = $conf['more.'];
-		if (empty($ts['doNotDisplay'])) {
-			$ts = empty($ts) ? array() : $ts;
-			$fields['page'] = $page;
-			$title = $this->translate($llPrefix . 'more');
-			$fields['title'] = $title;
-			$class = empty($ts['class']) ? 'more' : $ts['class'];
-			$class = ' class="' . $class . '"';
-			
-			$value = $this->confStdWrap($ts, 'value', '', NULL, 'page', $fields, $title);
-			
-			if (empty($ts['noLiWrap'])) {
-				$value = '<li' . $class . '>' . $value . '</li>';
-			}
-			if (!empty($ts['outerWrap.'])) {
-				$value = $this->confStdWrap($ts, 'outerWrap', $value, NULL, 'page', $fields, $value);
-			}
-			
-			if ($start > 1) {
-				if ($reverse) {
-					$order['items'] .= $value . "\n";
-				} else {
-					$order['items'] = $value . "\n" . $order['items'];
-				}
-			}
-			if ($end < $lastPage) {
-				if ($reverse) {
-					$order['items'] = $value . "\n" . $order['items'];
-				} else {
-					$order['items'] .= $value . "\n";
-				}
-			}
+		$value = '<fieldset class="defaultForm">' . "\n" . $value . "\n" . '</fieldset>';
+		
+		// javascript include
+		$value = '<script type="text/javascript" src="typo3conf/ext/extbase_pager/Resources/Public/JavaScript/pager.js"></script>' . "\n" . $value;
+		
+		// wrap in form tags
+		$value = '<form method="GET" action="' . $uri . '">' . "\n" . $value . "\n" . '</form>';
+		
+		if (empty($ts['noLiWrap'])) {
+			$value = '<li' . $class . '>' . $value . '</li>';
 		}
 		
-		// link to next page
-		$ts = $conf['next.'];
-		if (empty($ts['doNotDisplay']) && ($page < $lastPage)) {
-			$ts = empty($ts) ? array() : $ts;
-			$fields['page'] = $page + 1;
-			$title = $this->translate($llPrefix . 'next');
-			$fields['title'] = $title;
-			$class = empty($ts['class']) ? 'next' : $ts['class'];
-			$class = ' class="' . $class . '"';
-			
-			$value = $this->confStdWrap($ts, 'value', '', NULL, 'page', $fields, $title);
-			
-			$arguments[$namespace][$pageKey] = $fields['page'];
-			if ($includeLastPage) {
-				$arguments[$namespace][$lastPageKey] = $lastPage;
-			}
-			
-			// generate the uri to itself
-			$uri = $this->uriBuilder
-				->reset()
-				->setArguments($arguments)
-				->build();
-				
-			$value = '<a href="' . $uri . '" title="' . $title . '">' . $value . '</a>';
-			
-			if (empty($ts['noLiWrap'])) {
-				$value = '<li' . $class . '>' . $value . '</li>';
-			}
-			if (!empty($ts['outerWrap.'])) {
-				$value = $this->confStdWrap($ts, 'outerWrap', $value, NULL, 'page', $fields, $value);
-			}
-			
-			$order['next'] = $value;
+		if (!empty($ts['outerWrap' . $this->typoScriptSeparator])) {
+			$value = $this->confStdWrap($ts, 'outerWrap', $value, NULL, 'page', $fields, $value);
 		}
 		
-		// link to last page
-		$ts = $conf['last.'];
-		if (empty($ts['doNotDisplay']) && ($page < $lastPage || !empty($ts['showIfLastPage'])) && ($lastPage > 1 || !empty($ts['showIfOnePage']))) {
-			$ts = empty($ts) ? array() : $ts;
-			$fields['page'] = $lastPage;
-			$title = $this->translate($llPrefix . 'last');
-			$fields['title'] = $title;
-			$class = empty($ts['class']) ? 'last' : $ts['class'];
-			$class = ' class="' . $class . '"';
-			
-			$value = $this->confStdWrap($ts, 'value', '', NULL, 'page', $fields, $title);
-			
-			$arguments[$namespace][$pageKey] = $fields['page'];
-			if ($includeLastPage) {
-				$arguments[$namespace][$lastPageKey] = $lastPage;
-			}
-			
-			// generate the uri to itself
-			$uri = $this->uriBuilder
-				->reset()
-				->setArguments($arguments)
-				->build();
-				
-			$value = '<a href="' . $uri . '" title="' . $title . '">' . $value . '</a>';
-			
-			if (empty($ts['noLiWrap'])) {
-				$value = '<li' . $class . '>' . $value . '</li>';
-			}
-			if (!empty($ts['outerWrap.'])) {
-				$value = $this->confStdWrap($ts, 'outerWrap', $value, NULL, 'page', $fields, $value);
-			}
-			
-			$order['last'] = $value;
-		}
-		
-		// jumpto field
-		$ts = $conf['jumpto.'];
-		if (empty($ts['doNotDisplay'])) {
-			$ts = empty($ts) ? array() : $ts;
-			$fields['page'] = $page;
-			$fields['title'] = $fields['page'];
-			$class = empty($ts['class']) ? 'jumpto' : $ts['class'];
-			// add pagerJumptoJS class so the javascript hooks onto the input field
-			$class = ' class="' . $class . ' pagerJumptoJS"';
-			$title = $this->translate($llPrefix . 'jumptoTitle');
-			
-			$value = $this->confStdWrap($ts, 'value', '', NULL, 'page', $fields, $fields['page']);
-			
-			// generate the uri to itself
-			$uri = $this->uriBuilder
-				->reset()
-				->build();
-			
-			$value = '<input type="text" name="' . $namespace . '[' . $pageKey . ']" value="' . $value . '" onkeyup="pagerJSkeyup(event, this, 1, ' . $lastPage . ')" title="' . $title . '" />' . "\n";
-			
-			if ($includeLastPage) {
-				$value .= '<input type="hidden" name="' . $namespace . '[' . $lastPageKey . ']" value="' . $lastPage . '" />';
-			}
-			
-			// page/lastpage should not be in arguments array for the calculations that follow
-			unset($arguments[$namespace][$pageKey]);
-			unset($arguments[$namespace][$lastPageKey]);
-			
-			$argString = http_build_query($arguments, NULL, '&');
-			
-			// urldecode as it will be encoded by the browser
-			$argString = urldecode($argString);
-			
-			$flatArguments = explode('&', $argString);
-			
-			foreach ($flatArguments as $argument) {
-				list($n, $v) = explode('=', $argument);
-				if (!empty($n)) {
-					$value .= '<input type="hidden" name="' . $n . '" value="' . $v . '" />';
-				}
-			}
-			
-			$value = '<fieldset class="defaultForm">' . "\n" . $value . "\n" . '</fieldset>';
-			
-			// javascript include
-			$value = '<script type="text/javascript" src="typo3conf/ext/extbase_pager/Resources/Public/JavaScript/pager.js"></script>' . "\n" . $value;
-			
-			// wrap in form tags
-			$value = '<form method="GET" action="' . $uri . '">' . "\n" . $value . "\n" . '</form>';
-			
-			if (empty($ts['noLiWrap'])) {
-				$value = '<li' . $class . '>' . $value . '</li>';
-			}
-			if (!empty($ts['outerWrap.'])) {
-				$value = $this->confStdWrap($ts, 'outerWrap', $value, NULL, 'page', $fields, $value);
-			}
-			
-			$order['jumpto'] = $value;
-		}
-		
-		// info about the current page/last page
-		$ts = $conf['current.'];
-		if (empty($ts['doNotDisplay'])) {
-			$ts = empty($ts) ? array() : $ts;
-			$fields['page'] = $page;
-			$title = $this->translate($llPrefix . 'current');
-			$fields['title'] = $title;
-			$class = empty($ts['class']) ? 'current' : $ts['class'];
-			$class = ' class="' . $class . '"';
-			
-			$value = $this->confStdWrap($ts, 'value', '', NULL, 'page', $fields, $title . ': ' . $page . '/' . $lastPage);
-			
-			if (empty($ts['noLiWrap'])) {
-				$value = '<li' . $class . '>' . $value . '</li>';
-			}
-			if (!empty($ts['outerWrap.'])) {
-				$value = $this->confStdWrap($ts, 'outerWrap', $value, NULL, 'page', $fields, $value);
-			}
-			
-			$order['current'] = $value;
-		}
-		
-		// reassemble the content by order
-		$content = "\n" . implode("\n", $order) . "\n";
-		
-		if (!$noUlWrap) {
-			$content = '<ul' . $ulClass . '>' . $content . '</ul>';
-		}
-		
-		if (!empty($conf['stdWrap.'])) {
-			$content = $this->contentObject->stdWrap($content, $conf['stdWrap.']);
-		}
-		if (!empty($conf['stdWrap'])) {
-			$content = $this->contentObject->wrap($content, $conf['stdWrap']);
-		}
-		return $content;
+		return $value;
 	}
 	
 	/**
@@ -792,15 +645,15 @@ plugin.tx_sdfdsifj.settings.pager {
 	 * @return string The configuration value.
 	 */
 	public function confStdWrap($conf, $key, $content = '', $currentValue = NULL, $currentValueKey = NULL, $data = array(), $default = '') {
-		if (!empty($conf[$key . '.'])) {
+		if (!empty($conf[$key . $this->typoScriptSeparator])) {
 			$this->contentObject->start($data);
-			if ($currentValue != NULL) {
+			if ($currentValue !== NULL) {
 				$this->contentObject->setCurrentVal($currentValue);
 			} elseif ($currentValueKey !== NULL && isset($data[$currentValueKey])) {
 				$this->contentObject->setCurrentVal($data[$currentValueKey]);
 			}
 			$content = !empty($content) ? $content : (!empty($conf[$key]) ? $conf[$key] : '');
-			return $this->contentObject->stdWrap($content, $conf[$key . '.']);
+			return $this->contentObject->stdWrap($content, $conf[$key . $this->typoScriptSeparator]);
 		} else if (!empty($conf[$key])) {
 			return $conf[$key];
 		} else {
