@@ -1,3 +1,7 @@
+2011-08-17 Nils Blattner <nb@cabag.ch>
+	* version 0.1.2
+	* fixed a bug where the page items would not show
+
 2011-02-17 Nils Blattner <nb@cabag.ch>
 	* version 0.1.1
 	* added prepareArray() and prepareNumbers() to Tx_ExtbasePager_Utility_Pager

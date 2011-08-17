@@ -203,12 +203,12 @@ class Tx_ExtbasePager_ViewHelpers_PagerViewHelper extends Tx_Fluid_Core_ViewHelp
 				if ($this->typoScriptSetup['reverse']) {
 					$this->order['items'] .= $value . "\n";
 				} else {
-					$this->order['items'] = $value . "\n" . $order['items'];
+					$this->order['items'] = $value . "\n" . $this->order['items'];
 				}
 			}
 			if ($end < $lastPage) {
 				if ($this->typoScriptSetup['reverse']) {
-					$this->order['items'] = $value . "\n" . $order['items'];
+					$this->order['items'] = $value . "\n" . $this->order['items'];
 				} else {
 					$this->order['items'] .= $value . "\n";
 				}
@@ -242,7 +242,7 @@ class Tx_ExtbasePager_ViewHelpers_PagerViewHelper extends Tx_Fluid_Core_ViewHelp
 			$ts['doNotLinkIt'] = true;
 			$title = $this->translate($llPrefix . 'current');
 			
-			$order['current'] = $this->renderItem($ts, $page, $page, $lastPage, $fields, $title, $title . ': ' . $page . '/' . $lastPage);
+			$this->order['current'] = $this->renderItem($ts, $page, $page, $lastPage, $fields, $title, $title . ': ' . $page . '/' . $lastPage);
 		}
 		
 		// reassemble the content by order
